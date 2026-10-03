@@ -2,12 +2,20 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { ApiError, apiClient } from '@/lib/api-client';
+import { env } from '@/lib/env';
 
 type PublicQueue = { name: string; status: 'OPEN'; waiting: number };
 type EntryConfirmation = {
   queueName: string;
   firstName: string;
   position: number;
+  publicToken: string;
+};
+type CustomerStatus = {
+  queueName: string;
+  status: string;
+  position: number | null;
+  ahead: number;
 };
 
 export default function PublicQueuePage({
@@ -20,6 +28,7 @@ export default function PublicQueuePage({
   const [confirmation, setConfirmation] = useState<EntryConfirmation>();
   const [error, setError] = useState<string>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerStatus, setCustomerStatus] = useState<CustomerStatus>();
 
   useEffect(() => {
     void params.then(({ slug: currentSlug }) => {
@@ -31,6 +40,24 @@ export default function PublicQueuePage({
         .catch(() => setError('Esta fila não está disponível.'));
     });
   }, [params]);
+
+  useEffect(() => {
+    if (!confirmation) return;
+    const refresh = () =>
+      apiClient<CustomerStatus>(
+        `/queues/public/entries/${encodeURIComponent(confirmation.publicToken)}`,
+      )
+        .then(setCustomerStatus)
+        .catch(() => setError('Não foi possível atualizar seu atendimento.'));
+    void refresh();
+    const stream = new EventSource(
+      `${env.NEXT_PUBLIC_API_URL}/queues/public/entries/${encodeURIComponent(confirmation.publicToken)}/events`,
+      { withCredentials: true },
+    );
+    stream.onmessage = () => void refresh();
+    stream.onerror = () => stream.close();
+    return () => stream.close();
+  }, [confirmation]);
 
   async function enterQueue(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -79,8 +106,23 @@ export default function PublicQueuePage({
         <p>
           Você entrou na fila <strong>{confirmation.queueName}</strong>.
         </p>
-        <strong className="position">{confirmation.position}</strong>
-        <span>Sua posição atual</span>
+        {customerStatus?.status === 'IN_SERVICE' ? (
+          <>
+            <strong className="position">É sua vez!</strong>
+            <span>Dirija-se ao atendimento.</span>
+          </>
+        ) : (
+          <>
+            <strong className="position">
+              {customerStatus?.position ?? confirmation.position}
+            </strong>
+            <span>
+              {customerStatus
+                ? `${customerStatus.ahead} pessoa${customerStatus.ahead === 1 ? '' : 's'} à frente`
+                : 'Sua posição atual'}
+            </span>
+          </>
+        )}
       </section>
     );
   return (

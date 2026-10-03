@@ -200,6 +200,9 @@ function QueueCard({
           >
             {copied ? 'Link copiado' : 'Copiar link'}
           </button>
+          <Link className="text-link" href={`/dashboard/fila/${queue.id}`}>
+            Abrir atendimento
+          </Link>
         </div>
       </div>
     </article>
