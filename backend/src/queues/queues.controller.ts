@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { OrganizationRole, QueueStatus } from '@prisma/client';
 import { AuthenticatedSession } from '../auth/auth.types';
 import { CurrentSession } from '../auth/decorators/current-session.decorator';
@@ -7,6 +18,8 @@ import { CsrfGuard } from '../auth/guards/csrf.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { CreateQueueDto } from './dto/create-queue.dto';
+import { CreateQueueEntryDto } from './dto/create-queue-entry.dto';
+import { UpdateQueueDto } from './dto/update-queue.dto';
 import { QueuesService } from './queues.service';
 
 @Controller('queues')
@@ -18,6 +31,16 @@ export class QueuesController {
     @Param('slug') slug: string,
   ): Promise<{ name: string; status: QueueStatus; waiting: number }> {
     return this.queuesService.publicStatus(slug);
+  }
+
+  @Post('public/:slug/entries')
+  @HttpCode(201)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  enterPublicQueue(
+    @Param('slug') slug: string,
+    @Body() dto: CreateQueueEntryDto,
+  ): Promise<{ queueName: string; firstName: string; position: number }> {
+    return this.queuesService.enterPublicQueue(slug, dto);
   }
 
   @Get()
@@ -61,5 +84,32 @@ export class QueuesController {
     status: QueueStatus;
   }> {
     return this.queuesService.create(session, dto);
+  }
+
+  @Patch(':id')
+  @Roles(OrganizationRole.OWNER, OrganizationRole.MANAGER)
+  @UseGuards(SessionAuthGuard, RolesGuard, CsrfGuard)
+  update(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('id') id: string,
+    @Body() dto: UpdateQueueDto,
+  ): Promise<{
+    id: string;
+    name: string;
+    publicSlug: string;
+    status: QueueStatus;
+  }> {
+    return this.queuesService.update(session, id, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @Roles(OrganizationRole.OWNER, OrganizationRole.MANAGER)
+  @UseGuards(SessionAuthGuard, RolesGuard, CsrfGuard)
+  async remove(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('id') id: string,
+  ): Promise<void> {
+    await this.queuesService.remove(session, id);
   }
 }
