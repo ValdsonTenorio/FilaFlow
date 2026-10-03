@@ -22,9 +22,7 @@ export class QueuesController {
 
   @Get()
   @UseGuards(SessionAuthGuard)
-  list(
-    @CurrentSession() session: AuthenticatedSession,
-  ): Promise<
+  list(@CurrentSession() session: AuthenticatedSession): Promise<
     Array<{
       id: string;
       name: string;

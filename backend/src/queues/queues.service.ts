@@ -12,9 +12,7 @@ import { CreateQueueDto } from './dto/create-queue.dto';
 export class QueuesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(
-    session: AuthenticatedSession,
-  ): Promise<
+  list(session: AuthenticatedSession): Promise<
     Array<{
       id: string;
       name: string;
