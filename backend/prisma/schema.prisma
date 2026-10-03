@@ -24,6 +24,7 @@ enum QueueEntryStatus {
   CALLED
   IN_SERVICE
   COMPLETED
+  NO_SHOW
   CANCELLED
 }
 
@@ -100,8 +101,14 @@ model QueueEntry {
   queueId     String           @db.Uuid
   organizationId String         @db.Uuid
   displayName String           @db.VarChar(80)
+  publicToken String           @unique @db.VarChar(64)
   status      QueueEntryStatus @default(WAITING)
   position    Int
+  calledAt    DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  noShowAt    DateTime?
+  cancelledAt DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   queue       Queue            @relation(fields: [queueId], references: [id], onDelete: Cascade)

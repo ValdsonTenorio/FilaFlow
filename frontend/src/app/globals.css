@@ -244,3 +244,166 @@ main {
     margin-top: 12px;
   }
 }
+
+.dashboard {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+.dashboard-header {
+  margin: 18px 0 28px;
+}
+.dashboard-header h1 {
+  margin: 0;
+  font-size: clamp(2.3rem, 5vw, 4.3rem);
+  letter-spacing: -0.05em;
+}
+.dashboard-header p:not(.eyebrow),
+.loading {
+  color: var(--muted);
+}
+.queue-create {
+  max-width: none;
+  padding: 24px;
+}
+.queue-create h2,
+.section-title h2 {
+  margin: 0 0 15px;
+}
+.queue-create form > div {
+  display: flex;
+  gap: 10px;
+}
+.queue-create input,
+.entry-form input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  color: var(--text);
+  background: #081523;
+  border: 1px solid #29506e;
+  border-radius: 7px;
+  font: inherit;
+}
+.queue-create label,
+.entry-form label,
+.queue-share label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 40px;
+}
+.section-title span {
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--cyan);
+  background: #0c3046;
+}
+.queue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(285px, 1fr));
+  gap: 16px;
+}
+.queue-card {
+  padding: 21px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 13px;
+}
+.queue-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.queue-card h3 {
+  margin: 0 0 8px;
+}
+.queue-card-top > strong {
+  color: var(--cyan);
+  font-size: 1.5rem;
+}
+.queue-card small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 400;
+}
+.status {
+  display: inline-block;
+  padding: 3px 7px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.status-open {
+  color: #65e7b1;
+  background: #103d32;
+}
+.status-paused,
+.status-closed {
+  color: #f8c677;
+  background: #3b2e18;
+}
+.queue-share {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  padding-top: 20px;
+  margin-top: 20px;
+  border-top: 1px solid var(--surface-border);
+}
+.queue-share a {
+  display: block;
+  max-width: 160px;
+  overflow: hidden;
+  color: var(--cyan);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+.copy-button {
+  padding: 7px 10px;
+  margin-top: 10px;
+  color: var(--cyan);
+  background: transparent;
+  border: 1px solid var(--surface-border);
+}
+.public-card {
+  width: min(100%, 500px);
+  padding: 38px;
+  margin: 50px auto;
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.public-card h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 7vw, 3.8rem);
+  letter-spacing: -0.05em;
+}
+.public-card > p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.entry-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+}
+.entry-form button {
+  min-height: 44px;
+}
+.confirmation .position {
+  display: block;
+  margin-top: 30px;
+  color: var(--cyan);
+  font-size: 5rem;
+}
+.confirmation > span {
+  color: var(--muted);
+}
