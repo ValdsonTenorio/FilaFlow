@@ -22,4 +22,28 @@ describe('QueuesService', () => {
       }),
     );
   });
+
+  it('gera slug público no backend sem aceitar um slug enviado pelo cliente', async () => {
+    const create = jest.fn().mockResolvedValue({
+      id: 'fila-1',
+      name: 'Atendimento',
+      publicSlug: 'seguro',
+      status: 'OPEN',
+    });
+    const service = new QueuesService({ queue: { create } } as never);
+
+    await service.create(
+      { organizationId: 'org-a' } as never,
+      { name: 'Atendimento', publicSlug: 'tentativa-manual' } as never,
+    );
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          organizationId: 'org-a',
+          publicSlug: expect.stringMatching(/^[A-Za-z0-9_-]{24}$/),
+        }),
+      }),
+    );
+  });
 });
