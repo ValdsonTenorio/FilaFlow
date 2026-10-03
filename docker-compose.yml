@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: filaflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-filaflow}
+      POSTGRES_USER: ${POSTGRES_USER:-filaflow_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-troque-esta-senha-local}
+    volumes:
+      - filaflow_postgres_data:/var/lib/postgresql/data
+    networks:
+      - filaflow_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+      target: development
+    container_name: filaflow-backend
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: ${DATABASE_URL}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      PORT: ${BACKEND_PORT:-3001}
+      SESSION_SECRET: development-only-change-me-with-32-characters
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    networks:
+      - filaflow_network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/v1/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    container_name: filaflow-frontend
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api/v1}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    networks:
+      - filaflow_network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  filaflow_postgres_data:
+
+networks:
+  filaflow_network:
+    name: filaflow_network

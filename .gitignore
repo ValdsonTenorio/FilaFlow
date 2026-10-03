@@ -1,0 +1,29 @@
+# Dependências e artefatos
+node_modules/
+dist/
+.next/
+coverage/
+*.tsbuildinfo
+
+# Ambiente e segredos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.token
+secrets/
+
+# Dados locais
+*.sql
+*.dump
+postgres-data/
+
+# Sistema e editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
