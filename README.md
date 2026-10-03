@@ -26,4 +26,6 @@ Helmet, CSP, CORS por allowlist, limite global de requisições, limite do body 
 
 ## Limites atuais
 
+O primeiro fluxo demonstrável já está disponível: empresa cria a fila, recebe URL pública e QR Code, cliente informa somente o primeiro nome e a empresa vê as pessoas aguardando. A entrada pública não envia posição, organização ou identificadores internos; o servidor calcula a posição em transação serializável.
+
 Esta fundação não inclui entrada de clientes, chamada de próximos, WebSockets, pagamentos, mensagens, uploads ou relatórios. Esses fluxos devem manter o isolamento multiempresa e ampliar a cobertura de integração contra um PostgreSQL exclusivo de teste.
