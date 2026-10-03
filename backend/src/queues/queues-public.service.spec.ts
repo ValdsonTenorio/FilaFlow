@@ -21,15 +21,21 @@ describe('QueuesService - entrada pública', () => {
     const prisma = {
       $transaction: jest.fn((callback) => callback(transaction)),
     };
-    const service = new QueuesService(prisma as never);
+    const service = new QueuesService(
+      prisma as never,
+      { emitQueueUpdated: jest.fn() } as never,
+    );
 
     await expect(
       service.enterPublicQueue('seguro', { firstName: 'Ana' }),
-    ).resolves.toEqual({
-      queueName: 'Atendimento',
-      firstName: 'Ana',
-      position: 3,
-    });
+    ).resolves.toEqual(
+      expect.objectContaining({
+        queueName: 'Atendimento',
+        firstName: 'Ana',
+        position: 3,
+        publicToken: expect.any(String),
+      }),
+    );
     expect(transaction.queueEntry.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         position: 3,
@@ -49,7 +55,10 @@ describe('QueuesService - entrada pública', () => {
     const prisma = {
       $transaction: jest.fn((callback) => callback(transaction)),
     };
-    const service = new QueuesService(prisma as never);
+    const service = new QueuesService(
+      prisma as never,
+      { emitQueueUpdated: jest.fn() } as never,
+    );
     await expect(
       service.enterPublicQueue('pausada', { firstName: 'Ana' }),
     ).rejects.toThrow('Fila pública não encontrada');
