@@ -26,6 +26,10 @@ Helmet, CSP, CORS por allowlist, limite global de requisições, limite do body 
 
 ## Limites atuais
 
+## Atualização em tempo real
+
+O atendimento usa Server-Sent Events (SSE). A escolha mantém o modelo HTTP com cookies da aplicação, pois as telas apenas recebem notificações do servidor e continuam usando endpoints REST como fonte de verdade. Os streams são separados por fila; assinaturas administrativas exigem a sessão e confirmam a organização, enquanto assinaturas públicas só recebem o evento mínimo `queue.updated` e recarregam dados já minimizados.
+
 O primeiro fluxo demonstrável já está disponível: empresa cria a fila, recebe URL pública e QR Code, cliente informa somente o primeiro nome e a empresa vê as pessoas aguardando. A entrada pública não envia posição, organização ou identificadores internos; o servidor calcula a posição em transação serializável.
 
 Esta fundação não inclui entrada de clientes, chamada de próximos, WebSockets, pagamentos, mensagens, uploads ou relatórios. Esses fluxos devem manter o isolamento multiempresa e ampliar a cobertura de integração contra um PostgreSQL exclusivo de teste.
