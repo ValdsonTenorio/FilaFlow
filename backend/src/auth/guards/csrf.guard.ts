@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { Request } from 'express';
 import * as crypto from 'crypto';
 
@@ -12,7 +17,12 @@ export class CsrfGuard implements CanActivate {
       throw new ForbiddenException('Validação CSRF inválida.');
     }
 
-    const valid = cookieToken.length === headerToken.length && crypto.timingSafeEqual(Buffer.from(cookieToken), Buffer.from(headerToken));
+    const valid =
+      cookieToken.length === headerToken.length &&
+      crypto.timingSafeEqual(
+        Buffer.from(cookieToken),
+        Buffer.from(headerToken),
+      );
     if (!valid) throw new ForbiddenException('Validação CSRF inválida.');
     return true;
   }

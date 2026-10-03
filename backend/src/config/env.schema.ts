@@ -6,7 +6,9 @@ const booleanFromEnvironment = z
   .transform((value) => value === 'true');
 
 export const environmentSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   DATABASE_URL: z.string().url(),
   FRONTEND_ORIGIN: z.string().url(),
@@ -17,11 +19,15 @@ export const environmentSchema = z.object({
 
 export type Environment = z.infer<typeof environmentSchema>;
 
-export function validateEnvironment(config: Record<string, unknown>): Environment {
+export function validateEnvironment(
+  config: Record<string, unknown>,
+): Environment {
   const result = environmentSchema.safeParse(config);
 
   if (!result.success) {
-    throw new Error(`Configuração de ambiente inválida: ${result.error.issues.map((issue) => issue.path.join('.')).join(', ')}`);
+    throw new Error(
+      `Configuração de ambiente inválida: ${result.error.issues.map((issue) => issue.path.join('.')).join(', ')}`,
+    );
   }
 
   return result.data;

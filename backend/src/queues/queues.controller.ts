@@ -14,26 +14,54 @@ export class QueuesController {
   constructor(private readonly queuesService: QueuesService) {}
 
   @Get('public/:slug')
-  publicStatus(@Param('slug') slug: string): Promise<{ name: string; status: QueueStatus; waiting: number }> {
+  publicStatus(
+    @Param('slug') slug: string,
+  ): Promise<{ name: string; status: QueueStatus; waiting: number }> {
     return this.queuesService.publicStatus(slug);
   }
 
   @Get()
   @UseGuards(SessionAuthGuard)
-  list(@CurrentSession() session: AuthenticatedSession): Promise<Array<{ id: string; name: string; publicSlug: string; status: QueueStatus; createdAt: Date }>> {
+  list(
+    @CurrentSession() session: AuthenticatedSession,
+  ): Promise<
+    Array<{
+      id: string;
+      name: string;
+      publicSlug: string;
+      status: QueueStatus;
+      createdAt: Date;
+    }>
+  > {
     return this.queuesService.list(session);
   }
 
   @Get(':id')
   @UseGuards(SessionAuthGuard)
-  getById(@CurrentSession() session: AuthenticatedSession, @Param('id') id: string): Promise<{ id: string; name: string; publicSlug: string; status: QueueStatus }> {
+  getById(
+    @CurrentSession() session: AuthenticatedSession,
+    @Param('id') id: string,
+  ): Promise<{
+    id: string;
+    name: string;
+    publicSlug: string;
+    status: QueueStatus;
+  }> {
     return this.queuesService.getById(session, id);
   }
 
   @Post()
   @Roles(OrganizationRole.OWNER, OrganizationRole.MANAGER)
   @UseGuards(SessionAuthGuard, RolesGuard, CsrfGuard)
-  create(@CurrentSession() session: AuthenticatedSession, @Body() dto: CreateQueueDto): Promise<{ id: string; name: string; publicSlug: string; status: QueueStatus }> {
+  create(
+    @CurrentSession() session: AuthenticatedSession,
+    @Body() dto: CreateQueueDto,
+  ): Promise<{
+    id: string;
+    name: string;
+    publicSlug: string;
+    status: QueueStatus;
+  }> {
     return this.queuesService.create(session, dto);
   }
 }

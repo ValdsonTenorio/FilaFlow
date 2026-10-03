@@ -10,7 +10,9 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
-  me(@CurrentSession() session: AuthenticatedSession): Promise<{ id: string; email: string }> {
+  me(
+    @CurrentSession() session: AuthenticatedSession,
+  ): Promise<{ id: string; email: string }> {
     return this.usersService.me(session.userId);
   }
 }

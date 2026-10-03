@@ -10,7 +10,9 @@ export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
 
   @Get('current')
-  current(@CurrentSession() session: AuthenticatedSession): Promise<{ id: string; name: string; slug: string; role: string }> {
+  current(
+    @CurrentSession() session: AuthenticatedSession,
+  ): Promise<{ id: string; name: string; slug: string; role: string }> {
     return this.organizationsService.current(session);
   }
 }

@@ -9,6 +9,9 @@ export class CreateQueueDto {
   @IsString()
   @MinLength(3)
   @MaxLength(80)
-  @Matches(/^[a-z0-9-]+$/, { message: 'O link público deve conter apenas letras minúsculas, números e hífens.' })
+  @Matches(/^[a-z0-9-]+$/, {
+    message:
+      'O link público deve conter apenas letras minúsculas, números e hífens.',
+  })
   publicSlug!: string;
 }

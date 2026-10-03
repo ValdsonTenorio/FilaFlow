@@ -16,20 +16,56 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService<Environment, true>);
   const isProduction = config.get('NODE_ENV', { infer: true }) === 'production';
 
-  app.useLogger({ log: (message) => logger.info(message), error: (message) => logger.error(message), warn: (message) => logger.warn(message), debug: (message) => logger.debug(message), verbose: (message) => logger.trace(message), fatal: (message) => logger.fatal(message), setLogLevels: () => undefined });
+  app.useLogger({
+    log: (message) => logger.info(message),
+    error: (message) => logger.error(message),
+    warn: (message) => logger.warn(message),
+    debug: (message) => logger.debug(message),
+    verbose: (message) => logger.trace(message),
+    fatal: (message) => logger.fatal(message),
+    setLogLevels: () => undefined,
+  });
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
-  app.getHttpAdapter().getInstance().set('trust proxy', config.get('TRUST_PROXY', { infer: true }));
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .set('trust proxy', config.get('TRUST_PROXY', { infer: true }));
   app.use(pinoHttp({ logger }));
-  app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], baseUri: ["'self'"], frameAncestors: ["'none'"], objectSrc: ["'none'"] } } }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          baseUri: ["'self'"],
+          frameAncestors: ["'none'"],
+          objectSrc: ["'none'"],
+        },
+      },
+    }),
+  );
   app.use(cookieParser(config.get('SESSION_SECRET', { infer: true })));
-  app.enableCors({ origin: [config.get('FRONTEND_ORIGIN', { infer: true })], credentials: true, methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'] });
-  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true, transformOptions: { enableImplicitConversion: false } }));
+  app.enableCors({
+    origin: [config.get('FRONTEND_ORIGIN', { infer: true })],
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  });
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transformOptions: { enableImplicitConversion: false },
+    }),
+  );
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TimeoutInterceptor());
 
   if (!isProduction) {
-    const document = SwaggerModule.createDocument(app, new DocumentBuilder().setTitle('FilaFlow API').setVersion('1').build());
+    const document = SwaggerModule.createDocument(
+      app,
+      new DocumentBuilder().setTitle('FilaFlow API').setVersion('1').build(),
+    );
     SwaggerModule.setup('api/docs', app, document);
   }
 
