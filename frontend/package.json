@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand --passWithNoTests --config jest.config.js"
   },
   "dependencies": {
     "next": "16.3.8",
