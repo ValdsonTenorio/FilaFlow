@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrganizationRole {
+  OWNER
+  MANAGER
+  ATTENDANT
+}
+
+enum QueueStatus {
+  OPEN
+  PAUSED
+  CLOSED
+}
+
+enum QueueEntryStatus {
+  WAITING
+  CALLED
+  IN_SERVICE
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id              String               @id @default(uuid()) @db.Uuid
+  email           String               @unique @db.VarChar(320)
+  passwordHash    String               @db.VarChar(255)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  memberships     OrganizationMember[]
+  sessions        Session[]
+}
+
+model Organization {
+  id          String               @id @default(uuid()) @db.Uuid
+  name        String               @db.VarChar(120)
+  slug        String               @unique @db.VarChar(80)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  members     OrganizationMember[]
+  sessions    Session[]
+  queues      Queue[]
+  queueEntries QueueEntry[]
+}
+
+model OrganizationMember {
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @db.Uuid
+  organizationId String           @db.Uuid
+  role           OrganizationRole @default(ATTENDANT)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sessions       Session[]
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, role])
+}
+
+model Session {
+  id             String             @id @default(uuid()) @db.Uuid
+  tokenHash      String             @unique @db.VarChar(64)
+  userId         String             @db.Uuid
+  organizationId String             @db.Uuid
+  membershipId   String             @db.Uuid
+  expiresAt      DateTime
+  createdAt      DateTime           @default(now())
+  lastUsedAt     DateTime           @default(now())
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  membership     OrganizationMember @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([organizationId, expiresAt])
+}
+
+model Queue {
+  id             String      @id @default(uuid()) @db.Uuid
+  organizationId String      @db.Uuid
+  name           String      @db.VarChar(120)
+  publicSlug     String      @unique @db.VarChar(80)
+  status         QueueStatus @default(OPEN)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  entries        QueueEntry[]
+
+  @@index([organizationId, status])
+}
+
+model QueueEntry {
+  id          String           @id @default(uuid()) @db.Uuid
+  queueId     String           @db.Uuid
+  organizationId String         @db.Uuid
+  displayName String           @db.VarChar(80)
+  status      QueueEntryStatus @default(WAITING)
+  position    Int
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  queue       Queue            @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([queueId, position])
+  @@index([queueId, status, position])
+  @@index([organizationId, status])
+}
