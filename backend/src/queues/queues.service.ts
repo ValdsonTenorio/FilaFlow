@@ -10,6 +10,9 @@ import { PrismaService } from '../infrastructure/prisma/prisma.service';
 import { CreateQueueDto } from './dto/create-queue.dto';
 import { CreateQueueEntryDto } from './dto/create-queue-entry.dto';
 import { UpdateQueueDto } from './dto/update-queue.dto';
+import { QueueEventsService } from './queue-events.service';
+import { Observable } from 'rxjs';
+import { QueueEvent } from './queue-events.service';
 
 type QueueSummary = {
   id: string;
@@ -24,6 +27,7 @@ type QueueDetails = Omit<QueueSummary, 'createdAt' | 'waiting'> & {
   entries: Array<{
     id: string;
     displayName: string;
+    status: string;
     position: number;
     createdAt: Date;
   }>;
@@ -31,7 +35,10 @@ type QueueDetails = Omit<QueueSummary, 'createdAt' | 'waiting'> & {
 
 @Injectable()
 export class QueuesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly events: QueueEventsService,
+  ) {}
 
   async list(session: AuthenticatedSession): Promise<QueueSummary[]> {
     const queues = await this.prisma.queue.findMany({
@@ -68,10 +75,11 @@ export class QueuesService {
         publicSlug: true,
         status: true,
         entries: {
-          where: { status: 'WAITING' },
+          where: { status: { in: ['WAITING', 'CALLED', 'IN_SERVICE'] } },
           select: {
             id: true,
             displayName: true,
+            status: true,
             position: true,
             createdAt: true,
           },
@@ -151,11 +159,97 @@ export class QueuesService {
     };
   }
 
+  async publicDashboard(slug: string): Promise<{
+    name: string;
+    current: string | null;
+    next: string[];
+    updatedAt: Date;
+  }> {
+    const queue = await this.prisma.queue.findUnique({
+      where: { publicSlug: slug },
+      select: {
+        name: true,
+        status: true,
+        updatedAt: true,
+        entries: {
+          where: { status: { in: ['IN_SERVICE', 'CALLED', 'WAITING'] } },
+          select: { displayName: true, status: true, position: true },
+          orderBy: [{ status: 'asc' }, { position: 'asc' }],
+          take: 4,
+        },
+      },
+    });
+    if (!queue || queue.status !== QueueStatus.OPEN) {
+      throw new NotFoundException('Fila pública não encontrada.');
+    }
+    const current = queue.entries.find((entry) => entry.status !== 'WAITING');
+    const next = queue.entries
+      .filter((entry) => entry.status === 'WAITING')
+      .slice(0, 3)
+      .map((entry) => this.maskName(entry.displayName));
+    return {
+      name: queue.name,
+      current: current ? this.maskName(current.displayName) : null,
+      next,
+      updatedAt: queue.updatedAt,
+    };
+  }
+
+  async customerStatus(publicToken: string): Promise<{
+    queueName: string;
+    status: string;
+    position: number | null;
+    ahead: number;
+  }> {
+    const entry = await this.prisma.queueEntry.findUnique({
+      where: { publicToken },
+      select: {
+        status: true,
+        position: true,
+        queue: { select: { name: true, status: true } },
+      },
+    });
+    if (!entry || entry.queue.status !== QueueStatus.OPEN) {
+      throw new NotFoundException('Acompanhamento não encontrado.');
+    }
+    return {
+      queueName: entry.queue.name,
+      status: entry.status,
+      position: entry.status === 'WAITING' ? entry.position : null,
+      ahead: entry.status === 'WAITING' ? Math.max(entry.position - 1, 0) : 0,
+    };
+  }
+
+  async publicEvents(slug: string): Promise<Observable<QueueEvent>> {
+    const queue = await this.prisma.queue.findUnique({
+      where: { publicSlug: slug },
+      select: { id: true, status: true },
+    });
+    if (!queue || queue.status !== QueueStatus.OPEN) {
+      throw new NotFoundException('Fila pública não encontrada.');
+    }
+    return this.events.stream(queue.id);
+  }
+
+  async customerEvents(publicToken: string): Promise<Observable<QueueEvent>> {
+    const entry = await this.prisma.queueEntry.findUnique({
+      where: { publicToken },
+      select: { queueId: true },
+    });
+    if (!entry) throw new NotFoundException('Acompanhamento não encontrado.');
+    return this.events.stream(entry.queueId);
+  }
+
   async enterPublicQueue(
     slug: string,
     dto: CreateQueueEntryDto,
-  ): Promise<{ queueName: string; firstName: string; position: number }> {
-    return this.withSerializationRetry(() =>
+  ): Promise<{
+    queueName: string;
+    firstName: string;
+    position: number;
+    publicToken: string;
+  }> {
+    const entry = await this.withSerializationRetry(() =>
       this.prisma.$transaction(
         async (transaction) => {
           const queue = await transaction.queue.findUnique({
@@ -177,20 +271,35 @@ export class QueuesService {
             _max: { position: true },
           });
           const position = (lastEntry._max.position ?? 0) + 1;
+          const publicToken = crypto.randomBytes(24).toString('base64url');
           await transaction.queueEntry.create({
             data: {
               queueId: queue.id,
               organizationId: queue.organizationId,
               displayName: dto.firstName,
+              publicToken,
               position,
             },
           });
 
-          return { queueName: queue.name, firstName: dto.firstName, position };
+          return {
+            queueName: queue.name,
+            firstName: dto.firstName,
+            position,
+            publicToken,
+            queueId: queue.id,
+          };
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       ),
     );
+    this.events.emitQueueUpdated(entry.queueId);
+    return {
+      queueName: entry.queueName,
+      firstName: entry.firstName,
+      position: entry.position,
+      publicToken: entry.publicToken,
+    };
   }
 
   canManage(role: OrganizationRole): boolean {
@@ -219,5 +328,9 @@ export class QueuesService {
       'code' in error &&
       error.code === 'P2034'
     );
+  }
+
+  private maskName(name: string): string {
+    return `${name.slice(0, 1).toUpperCase()}.`;
   }
 }
